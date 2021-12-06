@@ -52,37 +52,54 @@ rule estimateMigProbs:
         shell("{KALLISTO_LS_BINARY} migrate -o {DATA_BASE_PATH}/ -i {input}")
 
 
-def determineBands(wildcards):
+# def determineBands(wildcards):
+#     bandCombination = wildcards.combBand
+#     pair = wildcards.pair
+#     if bandCombination=="comb12":
+#         returnList = [str(DATA_BASE_PATH+"/band1/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band2/R"+pair+"_sim.fq")]
+#     elif bandCombination=="comb23":
+#         returnList = [str(DATA_BASE_PATH+"/band2/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band3/R"+pair+"_sim.fq")]
+#     elif bandCombination=="comb34":
+#         returnList = [str(DATA_BASE_PATH+"/band3/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band4/R"+pair+"_sim.fq")]
+#     elif bandCombination=="comb45":
+#         returnList = [str(DATA_BASE_PATH+"/band4/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band5/R"+pair+"_sim.fq")]
+#     elif bandCombination=="comb56":
+#         returnList = [str(DATA_BASE_PATH+"/band5/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band6/R"+pair+"_sim.fq")]
+#     elif bandCombination=="comb67":
+#         returnList = [str(DATA_BASE_PATH+"/band6/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band7/R"+pair+"_sim.fq")]
+#
+#     return returnList
+#
+#
+#
+# rule combineReads:
+#     input:
+#         determineBands
+#     output:
+#         DATA_BASE_PATH+"/{combBand}/Comb_R{pair}_sim.fq"
+#     shell:
+#         """
+#             mkdir -p {DATA_BASE_PATH}/{wildcards.combBand}
+#             cat {input} > {DATA_BASE_PATH}/{wildcards.combBand}/Comb_R{wildcards.pair}_sim.fq
+#         """
+
+def determineCombBands(wildcards):
     bandCombination = wildcards.combBand
-    pair = wildcards.pair
+    #pair = wildcards.pair
     if bandCombination=="comb12":
-        returnList = [str(DATA_BASE_PATH+"/band1/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band2/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band1/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band2/Aligned.sortedByCoord.out.bam")]
     elif bandCombination=="comb23":
-        returnList = [str(DATA_BASE_PATH+"/band2/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band3/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band2/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band3/Aligned.sortedByCoord.out.bam")]
     elif bandCombination=="comb34":
-        returnList = [str(DATA_BASE_PATH+"/band3/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band4/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band3/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band4/Aligned.sortedByCoord.out.bam")]
     elif bandCombination=="comb45":
-        returnList = [str(DATA_BASE_PATH+"/band4/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band5/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band4/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band5/Aligned.sortedByCoord.out.bam")]
     elif bandCombination=="comb56":
-        returnList = [str(DATA_BASE_PATH+"/band5/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band6/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band5/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band6/Aligned.sortedByCoord.out.bam")]
     elif bandCombination=="comb67":
-        returnList = [str(DATA_BASE_PATH+"/band6/R"+pair+"_sim.fq"),str(DATA_BASE_PATH+"/band7/R"+pair+"_sim.fq")]
+        returnList = [str(DATA_BASE_PATH+"/band6/Aligned.sortedByCoord.out.bam"),str(DATA_BASE_PATH+"/band7/Aligned.sortedByCoord.out.bam")]
 
     return returnList
-
-
-
-rule combineReads:
-    input:
-        determineBands
-    output:
-        DATA_BASE_PATH+"/{combBand}/Comb_R{pair}_sim.fq"
-    shell:
-        """
-            mkdir -p {DATA_BASE_PATH}/{wildcards.combBand}
-            cat {input} > {DATA_BASE_PATH}/{wildcards.combBand}/Comb_R{wildcards.pair}_sim.fq
-        """
-
 
 
 rule run_STAR_Band_INDIVIDUAL:
@@ -100,18 +117,30 @@ rule run_STAR_Band_INDIVIDUAL:
         {STAR_BINARY} --runThreadN 2 --genomeDir {input.genomeDir} --readFilesIn {input.inputFilePair1} {input.inputFilePair2} --outSAMstrandField intronMotif --outFileNamePrefix {DATA_BASE_PATH}/{wildcards.band}/ --outSAMtype BAM SortedByCoordinate
         """
 
+rule run_combineMappings:
+    input:
+        determineCombBands
+    threads:
+        N_THREADS
+    output:
+        DATA_BASE_PATH+"/{combBand}/Comb.Aligned.sortedByCoord.out.bam"
+    shell:
+        """
+        {SAMTOOLS_BINARY} merge {output} {input}
+        """
 
 
-rule run_STAR_Band_COMBINED:
-        input:
-                genomeDir = STAR_GENOME_DIR,
-                inputFilePair1 = DATA_BASE_PATH+"/{combBand}/Comb_R1_sim.fq",
-                inputFilePair2 = DATA_BASE_PATH+"/{combBand}/Comb_R2_sim.fq"
-        threads:
-                N_THREADS
-        output:
-                DATA_BASE_PATH+"/{combBand}/Comb.Aligned.sortedByCoord.out.bam"
-        shell:
-                """
-                {STAR_BINARY} --runThreadN 2 --genomeDir {input.genomeDir} --readFilesIn {input.inputFilePair1} {input.inputFilePair2} --outSAMstrandField intronMotif --outFileNamePrefix {DATA_BASE_PATH}/{wildcards.combBand}/Comb. --outSAMtype BAM SortedByCoordinate
-                """
+
+# rule run_STAR_Band_COMBINED:
+#         input:
+#                 genomeDir = STAR_GENOME_DIR,
+#                 inputFilePair1 = DATA_BASE_PATH+"/{combBand}/Comb_R1_sim.fq",
+#                 inputFilePair2 = DATA_BASE_PATH+"/{combBand}/Comb_R2_sim.fq"
+#         threads:
+#                 N_THREADS
+#         output:
+#                 DATA_BASE_PATH+"/{combBand}/Comb.Aligned.sortedByCoord.out.bam"
+#         shell:
+#                 """
+#                 {STAR_BINARY} --runThreadN 2 --genomeDir {input.genomeDir} --readFilesIn {input.inputFilePair1} {input.inputFilePair2} --outSAMstrandField intronMotif --outFileNamePrefix {DATA_BASE_PATH}/{wildcards.combBand}/Comb. --outSAMtype BAM SortedByCoordinate
+#                 """

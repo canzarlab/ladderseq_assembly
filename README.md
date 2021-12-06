@@ -12,12 +12,10 @@ In the **reference-based transcript assembly** from Ladder-seq reads we use [Str
 
 ## Installation
 
-This repository includes precompiled StringTie 2.1.4, read aligner [STAR 2.7.5c](https://github.com/alexdobin/STAR), [samtools 1.10]() and kallisto-ls binaries for Linux x86_64. It includes kallisto-ls also as a submodule that is automatically included when obtaining this repository through command:
-```shell
-git clone --recursive https://github.com/canzarlab/LadderSeq-Assembly.git
-```
-Then, kallisto-ls can be re-built from source as described [here](https://github.com/canzarlab/kallisto-ls) and the path to the kallist-ls binary adjusted in the `config.py` file (see below).
-All required steps, including read alignment (using STAR), estimation of migration patterns, length-contrained transcript assembly, integration, and quantification are run by the [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow management system, which needs to be [installed](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) on your system.
+This repository includes precompiled StringTie 2.1.4, read aligner [STAR 2.7.5c](https://github.com/alexdobin/STAR), [samtools 1.10]() and kallisto-ls binaries for Linux x86_64.
+
+Stringtie_ls uses kallisto-ls which can be built from source as described [here](https://github.com/canzarlab/kallisto-ls) and the path to the kallisto-ls binary adjusted in the `config.py` file (see below).
+All required steps, including read alignment (using STAR), estimation of migration patterns, length-constrained transcript assembly, integration, and quantification are run by the [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow management system, which needs to be [installed](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) on your system.
 
 ## Transcript assembly using StringTie2
 
@@ -37,10 +35,10 @@ Assembled transcripts are reported in file `LadderSeqAssembly.gtf` in the direct
 ## Transcript assembly using an alternative short-read assembler
 
 In directory `GenericAssembler` we provide a more generic workflow in which StringTie2 can easily be replaced by a short-read RNA-seq assembly method of the user's choice.
-In file `Snakefile_runAssembler.smk` the user needs to replace two occurrences of 
+In file `Snakefile_runAssembler.smk` the user needs to replace two occurrences of
 ```shell
 <YOUR CODE GOES HERE>
-``` 
+```
 with the command used to call the preferred assemby method, using
 `{input.alignmentFile}` and  `{output[0]}` to specify input read alignments in `.bam` format and output file containing transcripts in `.gtf` format, respectively.
 
